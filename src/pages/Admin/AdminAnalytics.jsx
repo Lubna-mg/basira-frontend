@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "../../layouts/AdminLayout";
-import { FaChartLine, FaCalendarAlt, FaHospital, FaUserMd } from "react-icons/fa";
+import api from "../../services/api"; // ✅ مهم
+import {
+  FaChartLine,
+  FaCalendarAlt,
+  FaHospital,
+  FaUserMd,
+} from "react-icons/fa";
 
 export default function AdminAnalytics() {
   const [range, setRange] = useState("week");
@@ -20,24 +26,17 @@ export default function AdminAnalytics() {
         setLoading(true);
         setError("");
 
-        const token = localStorage.getItem("adminToken");
-        if (!token) return handleAuthError();
-
-        const res = await fetch(
-          `http://localhost:5001/api/v1/admin/analytics?range=${range}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        const res = await api.get(
+          `/admin/analytics?range=${range}`
         );
 
-        if (!res.ok) throw new Error("فشل تحميل بيانات التحليلات");
-
-        const json = await res.json();
-        setData(json);
+        setData(res.data);
       } catch (err) {
-        setError(err.message || "حدث خطأ غير متوقع");
+        if (err.response?.status === 401) {
+          handleAuthError();
+        } else {
+          setError("فشل تحميل بيانات التحليلات");
+        }
       } finally {
         setLoading(false);
       }
@@ -67,7 +66,6 @@ export default function AdminAnalytics() {
   return (
     <AdminLayout>
       <div className="space-y-8">
-
         {/* ===== Header ===== */}
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>

@@ -7,6 +7,7 @@ import {
 } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../../services/api"; // ✅ axios الموحّد
 
 export default function CenterDashboard() {
   const navigate = useNavigate();
@@ -22,18 +23,20 @@ export default function CenterDashboard() {
       return;
     }
 
-    fetch("http://localhost:5001/api/v1/center/dashboard", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then(async (res) => {
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.message || "فشل تحميل البيانات");
-        setData(json);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    const fetchDashboard = async () => {
+      try {
+        const res = await api.get("/center/dashboard");
+        setData(res.data);
+      } catch (err) {
+        setError(
+          err.response?.data?.message || "فشل تحميل بيانات لوحة التحكم"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboard();
   }, []);
 
   if (loading)
@@ -56,7 +59,6 @@ export default function CenterDashboard() {
   return (
     <CenterLayout>
       <div className="space-y-8">
-
         {/* ===== Header ===== */}
         <div>
           <h1 className="text-2xl font-bold text-slate-800">
@@ -89,7 +91,6 @@ export default function CenterDashboard() {
 
         {/* ===== Middle Section ===== */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
           {/* Activity */}
           <div className="bg-white rounded-xl border p-5">
             <h3 className="font-semibold text-slate-800 mb-4">
@@ -97,9 +98,7 @@ export default function CenterDashboard() {
             </h3>
 
             {recentActivity.length === 0 ? (
-              <p className="text-sm text-slate-400">
-                لا توجد نشاطات حديثة
-              </p>
+              <p className="text-sm text-slate-400">لا توجد نشاطات حديثة</p>
             ) : (
               <div className="space-y-3 text-sm">
                 {recentActivity.map((a, i) => (
@@ -122,7 +121,6 @@ export default function CenterDashboard() {
 
         {/* ===== Subscription HERO ===== */}
         <div className="bg-gradient-to-l from-slate-900 to-slate-800 text-white rounded-2xl p-6 flex flex-col md:flex-row md:justify-between gap-6">
-
           <div>
             <p className="text-xs opacity-80">الاشتراك الحالي</p>
             <h3 className="text-xl font-bold mt-1">
@@ -161,7 +159,6 @@ export default function CenterDashboard() {
             </button>
           </div>
         </div>
-
       </div>
     </CenterLayout>
   );

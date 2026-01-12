@@ -1,8 +1,7 @@
 import CenterLayout from "../../layouts/CenterLayout";
 import { FaClipboardList, FaSearch } from "react-icons/fa";
 import { useEffect, useMemo, useState } from "react";
-
-const API_BASE = "http://localhost:5001/api/v1";
+import api from "../../services/api"; // ✅ axios الموحّد
 
 export default function CenterReports() {
   const [reports, setReports] = useState([]);
@@ -16,27 +15,23 @@ export default function CenterReports() {
      جلب التقارير
   ====================== */
   useEffect(() => {
-    const token = localStorage.getItem("centerToken");
-    if (!token) {
-      setError("لم يتم العثور على توكن المركز");
-      setLoading(false);
-      return;
-    }
+    const fetchReports = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-    fetch(`${API_BASE}/center/reports`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setReports(data.reports || []);
+        const res = await api.get("/center/reports");
+        setReports(res.data.reports || []);
+      } catch (err) {
+        setError(
+          err.response?.data?.message || "فشل تحميل التقارير"
+        );
+      } finally {
         setLoading(false);
-      })
-      .catch(() => {
-        setError("فشل تحميل التقارير");
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchReports();
   }, []);
 
   /* ======================

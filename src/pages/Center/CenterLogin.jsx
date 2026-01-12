@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FaHospitalUser,
-  FaEye,
-  FaEyeSlash,
-} from "react-icons/fa";
+import { FaHospitalUser, FaEye, FaEyeSlash } from "react-icons/fa";
+import api from "../../services/api"; // ✅ axios الموحّد
 
 export default function CenterLogin() {
   const navigate = useNavigate();
@@ -28,29 +25,22 @@ export default function CenterLogin() {
     setLoading(true);
 
     try {
-      const res = await fetch(
-        "http://localhost:5001/api/v1/center/auth/login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: email.trim(),
-            password: password.trim(),
-          }),
-        }
+      const res = await api.post("/center/auth/login", {
+        email: email.trim(),
+        password: password.trim(),
+      });
+
+      localStorage.setItem("centerToken", res.data.token);
+      localStorage.setItem(
+        "centerInfo",
+        JSON.stringify(res.data.center)
       );
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "فشل تسجيل الدخول");
-      }
-
-      localStorage.setItem("centerToken", data.token);
-      localStorage.setItem("centerInfo", JSON.stringify(data.center));
 
       navigate("/center-dashboard");
     } catch (err) {
-      setError(err.message || "حدث خطأ غير متوقع");
+      setError(
+        err.response?.data?.message || "فشل تسجيل الدخول"
+      );
     } finally {
       setLoading(false);
     }
@@ -59,7 +49,6 @@ export default function CenterLogin() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#F4F9FD] to-[#DCE6F2]">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-14 h-14 flex items-center justify-center rounded-full bg-[#0A2A43] text-white mb-4">

@@ -1,21 +1,27 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:5001/api/v1/admin/auth";
+const BASE_URL = `${import.meta.env.VITE_API_URL}/api/v1/admin/auth`;
 
+/**
+ * تسجيل دخول الأدمن
+ */
 export const loginAdmin = async (email, password) => {
   const res = await axios.post(`${BASE_URL}/login`, {
-    email,
-    password,
+    email: email.trim(),
+    password: password.trim(),
   });
 
-  // حفظ التوكن
-  localStorage.setItem("token", res.data.token);
-  localStorage.setItem("admin", JSON.stringify(res.data.admin));
+  // ✅ تخزين موحّد
+  localStorage.setItem("adminToken", res.data.token);
+  localStorage.setItem("adminInfo", JSON.stringify(res.data.admin));
 
   return res.data;
 };
 
+/**
+ * تسجيل خروج الأدمن
+ */
 export const logoutAdmin = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("admin");
+  localStorage.removeItem("adminToken");
+  localStorage.removeItem("adminInfo");
 };

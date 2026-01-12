@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
+import api from "../../services/api"; // ✅
 import { FaUserMd } from "react-icons/fa";
 
 export default function AdminDoctors() {
@@ -16,36 +17,21 @@ export default function AdminDoctors() {
         setLoading(true);
         setError("");
 
-        const token = localStorage.getItem("adminToken");
-        if (!token) {
-          navigate("/admin-login");
-          return;
-        }
+        const res = await api.get("/admin/doctors");
 
-        const res = await fetch("http://localhost:5001/api/v1/admin/doctors", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (res.status === 401) {
-          localStorage.removeItem("adminToken");
-          navigate("/admin-login");
-          return;
-        }
-
-        if (!res.ok) {
-          throw new Error("فشل في تحميل بيانات الأطباء");
-        }
-
-        const data = await res.json();
-        const normalizedDoctors = Array.isArray(data)
-          ? data
-          : data.doctors || [];
+        const normalizedDoctors = Array.isArray(res.data)
+          ? res.data
+          : res.data.doctors || [];
 
         setDoctors(normalizedDoctors);
       } catch (err) {
-        setError(err.message || "حدث خطأ غير متوقع");
+        if (err.response?.status === 401) {
+          localStorage.removeItem("adminToken");
+          localStorage.removeItem("adminInfo");
+          navigate("/admin-login", { replace: true });
+        } else {
+          setError("فشل في تحميل بيانات الأطباء");
+        }
       } finally {
         setLoading(false);
       }
@@ -100,8 +86,10 @@ export default function AdminDoctors() {
                            hover:shadow-md transition-shadow flex gap-4"
               >
                 {/* Icon */}
-                <div className="w-12 h-12 flex items-center justify-center
-                                rounded-full bg-[#EAF6FF] text-[#135C8A] text-lg">
+                <div
+                  className="w-12 h-12 flex items-center justify-center
+                             rounded-full bg-[#EAF6FF] text-[#135C8A] text-lg"
+                >
                   <FaUserMd />
                 </div>
 

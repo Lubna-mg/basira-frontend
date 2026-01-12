@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
+import api from "../../services/api"; // ✅ مهم
 import { FaMapMarkerAlt, FaPlus, FaTrash, FaEdit } from "react-icons/fa";
 
 /* =========================
@@ -17,8 +18,6 @@ const PLAN_OPTIONS = [
   { value: "شهرية", label: "شهرية" },
   { value: "سنوية", label: "سنوية" },
 ];
-
-const API_BASE = "http://localhost:5001/api/v1";
 
 /* =========================
    Component
@@ -53,26 +52,14 @@ export default function AdminCenters() {
       setLoading(true);
       setError("");
 
-      const token = localStorage.getItem("adminToken");
-      if (!token) {
-        navigate("/admin-login", { replace: true });
-        return;
-      }
-
-      const res = await fetch(`${API_BASE}/admin/centers`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error("فشل تحميل بيانات المراكز");
-      }
-
-      const data = await res.json();
-      setCenters(data.centers || []);
+      const res = await api.get("/admin/centers");
+      setCenters(res.data.centers || []);
     } catch (err) {
-      setError(err.message || "حدث خطأ أثناء جلب المراكز");
+      if (err.response?.status === 401) {
+        navigate("/admin-login", { replace: true });
+      } else {
+        setError("فشل تحميل بيانات المراكز");
+      }
     } finally {
       setLoading(false);
     }
@@ -115,43 +102,21 @@ export default function AdminCenters() {
       return;
     }
 
-    const token = localStorage.getItem("adminToken");
-    if (!token) {
-      navigate("/admin-login", { replace: true });
-      return;
-    }
-
     try {
       setSaving(true);
       setError("");
 
-      const isEdit = mode === "edit";
-      const url = isEdit
-        ? `${API_BASE}/admin/centers/${editingId}`
-        : `${API_BASE}/admin/centers`;
-
-      const res = await fetch(url, {
-        method: isEdit ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(form),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data.message || "فشل حفظ بيانات المركز");
+      if (mode === "edit") {
+        await api.put(`/admin/centers/${editingId}`, form);
+      } else {
+        await api.post("/admin/centers", form);
       }
 
-      // ✅ الحل النهائي: إعادة جلب المراكز بعد أي تعديل
       await fetchCenters();
-
       resetForm();
       setShowForm(false);
     } catch (err) {
-      setError(err.message || "حدث خطأ أثناء الحفظ");
+      setError(err.response?.data?.message || "فشل حفظ بيانات المركز");
     } finally {
       setSaving(false);
     }
@@ -175,27 +140,11 @@ export default function AdminCenters() {
   const handleDelete = async (id) => {
     if (!window.confirm("هل أنت متأكدة من حذف المركز؟")) return;
 
-    const token = localStorage.getItem("adminToken");
-    if (!token) {
-      navigate("/admin-login", { replace: true });
-      return;
-    }
-
     try {
-      const res = await fetch(`${API_BASE}/admin/centers/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error("فشل حذف المركز");
-      }
-
+      await api.delete(`/admin/centers/${id}`);
       await fetchCenters();
-    } catch (err) {
-      setError(err.message || "حدث خطأ أثناء الحذف");
+    } catch {
+      setError("فشل حذف المركز");
     }
   };
 
@@ -205,7 +154,6 @@ export default function AdminCenters() {
   return (
     <AdminLayout title="إدارة المراكز">
       <div className="flex flex-col gap-6">
-
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -245,11 +193,15 @@ export default function AdminCenters() {
             <input name="contactPhone" placeholder="رقم الجوال" value={form.contactPhone} onChange={handleChange} className="border p-2 rounded" />
 
             <select name="subscriptionPlan" value={form.subscriptionPlan} onChange={handleChange} className="border p-2 rounded">
-              {PLAN_OPTIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+              {PLAN_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
             </select>
 
             <select name="status" value={form.status} onChange={handleChange} className="border p-2 rounded">
-              {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
             </select>
 
             <div className="md:col-span-2 flex justify-end gap-3">
@@ -299,7 +251,6 @@ export default function AdminCenters() {
             ))}
           </div>
         )}
-
       </div>
     </AdminLayout>
   );

@@ -19,6 +19,8 @@ export default function AdminReports() {
     ]);
   }, []);
 
+  const API_BASE = import.meta.env.VITE_API_URL;
+
   return (
     <AdminLayout>
       <div className="flex flex-col gap-6">
@@ -35,10 +37,7 @@ export default function AdminReports() {
 
         {/* Summary */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <SummaryCard
-            label="عدد التقارير المتاحة"
-            value={reports.length}
-          />
+          <SummaryCard label="عدد التقارير المتاحة" value={reports.length} />
         </section>
 
         {/* Table */}
@@ -66,7 +65,7 @@ export default function AdminReports() {
                   </td>
                   <td className="text-center">
                     <a
-                      href={`http://localhost:5001${r.downloadUrl}`}
+                      href={`${API_BASE}${r.downloadUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 text-[#0A2A43] hover:underline"
