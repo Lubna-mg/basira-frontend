@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FaUserShield,
-  FaEye,
-  FaEyeSlash,
-} from "react-icons/fa";
+import { FaUserShield, FaEye, FaEyeSlash } from "react-icons/fa";
+import api from "../../api/axios"; // ✅ مهم
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -28,27 +25,20 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      const res = await fetch(
-        "http://localhost:5001/api/v1/admin/auth/login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: email.trim(),
-            password: password.trim(),
-          }),
-        }
-      );
+      // ✅ نستخدم api بدل fetch
+      const res = await api.post("/admin/auth/login", {
+        email: email.trim(),
+        password: password.trim(),
+      });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "فشل تسجيل الدخول");
-
-      localStorage.setItem("adminToken", data.token);
-      localStorage.setItem("adminInfo", JSON.stringify(data.admin));
+      localStorage.setItem("adminToken", res.data.token);
+      localStorage.setItem("adminInfo", JSON.stringify(res.data.admin));
 
       navigate("/admin-dashboard");
     } catch (err) {
-      setError(err.message || "حدث خطأ غير متوقع");
+      setError(
+        err.response?.data?.message || "فشل تسجيل الدخول"
+      );
     } finally {
       setLoading(false);
     }
@@ -124,7 +114,6 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        {/* Footer */}
         <div className="mt-8 text-center text-xs text-gray-400">
           في حال عدم تفعيل الحساب، يرجى التواصل مع إدارة المنصة
         </div>
