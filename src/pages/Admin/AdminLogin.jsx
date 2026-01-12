@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUserShield, FaEye, FaEyeSlash } from "react-icons/fa";
-import api from "../../api/axios"; // ✅ مهم
+
+const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -25,20 +26,32 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      // ✅ نستخدم api بدل fetch
-      const res = await api.post("/admin/auth/login", {
-        email: email.trim(),
-        password: password.trim(),
-      });
+      const res = await fetch(
+        `${API_BASE}/api/v1/admin/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            password: password.trim(),
+          }),
+        }
+      );
 
-      localStorage.setItem("adminToken", res.data.token);
-      localStorage.setItem("adminInfo", JSON.stringify(res.data.admin));
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "فشل تسجيل الدخول");
+      }
+
+      localStorage.setItem("adminToken", data.token);
+      localStorage.setItem("adminInfo", JSON.stringify(data.admin));
 
       navigate("/admin-dashboard");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "فشل تسجيل الدخول"
-      );
+      setError(err.message || "حدث خطأ غير متوقع");
     } finally {
       setLoading(false);
     }
@@ -47,7 +60,6 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#F4F9FD] to-[#DCE6F2]">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-14 h-14 flex items-center justify-center rounded-full bg-[#0A2A43] text-white mb-4">
@@ -114,6 +126,7 @@ export default function AdminLogin() {
           </button>
         </form>
 
+        {/* Footer */}
         <div className="mt-8 text-center text-xs text-gray-400">
           في حال عدم تفعيل الحساب، يرجى التواصل مع إدارة المنصة
         </div>
